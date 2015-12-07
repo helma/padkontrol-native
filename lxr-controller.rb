@@ -1,6 +1,6 @@
 #!/usr/bin/env ruby
 require 'unimidi'
-require 'midi-topaz'
+require 'topaz'
 
 # pads
 PADS = (0..15).to_a
@@ -110,9 +110,8 @@ PK_OUT.puts(SYSEX_NATIVE_MODE_ON)
 PK_OUT.puts(SYSEX_NATIVE_MODE_ENABLE_OUTPUT)
 PK_OUT.puts(SYSEX_NATIVE_MODE_INIT) # must be sent after SYSEX_NATIVE_MODE_ON
 
-LXR_OUT = UniMIDI::Output.find_by_name("Sonic Potions USB MIDI").open
-MMC_IN = UniMIDI::Input.find_by_name("Sonic Potions USB MIDI").open
-#ZAQ_IN = UniMIDI::Input.find_by_name("HDSP").open
+#LXR_OUT = UniMIDI::Output.find_by_name("Sonic Potions USB MIDI").open
+LXR_OUT = UniMIDI::Output.find_by_name("Virtual Raw MIDI").open
 
 LXR_MUTE_BUTTONS = []
 [
@@ -130,22 +129,12 @@ LXR_PATTERN_BUTTONS = []
 
 LXR_PATTERN_BUTTONS[63+13].select
 
-@start = 0
-@seq = {}
 loop do
-  mmc = MMC_IN.gets
-  p mmc
-  if mmc.first[:data].first == 0xFA # start
-    @start = mmc[:timestamp]
-    p @start
-  end
   pk = PK_IN.gets.first
   if pk[:data][5] == 72 and pk[:data][7] == 127 # BUTTON on
     LXR_MUTE_BUTTONS[pk[:data][6]].toggle
-    #@seq[pk[:timestamp]-@start] = pk[:data]
   elsif pk[:data][5] == 69 and pk[:data][6] > 71 # PAD on
     LXR_PATTERN_BUTTONS.each{|b| b.deselect if b and b.on}
     LXR_PATTERN_BUTTONS[pk[:data][6]].select
-    #@seq[pk[:timestamp]-@start] = pk[:data]
   end
 end
